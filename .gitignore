@@ -1,0 +1,3 @@
+make/*
+!make/scripts/
+!make/Makefile
