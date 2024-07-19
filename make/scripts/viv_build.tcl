@@ -31,6 +31,10 @@ wait_on_run synth_1
 launch_runs impl_1 -to_step write_bitstream
 wait_on_run impl_1
 
+# export the hardware file
+append xsa_path $proj_name .xsa
+write_hw_platform -fixed -include_bit -force -file $xsa_path
+
 
 
 
