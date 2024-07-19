@@ -28,4 +28,5 @@ $(TOPS_SW):
 	@echo $(CONFIG_FILE)
 	@echo $(SCRIPT_FILE)
 	mkdir -p $(sw_dir)/$@
+	# this is giving an error due to missing xlsclients when launching xsct
 	cd $(sw_dir)/$@; $(xsct) $(SCRIPT_FILE)
