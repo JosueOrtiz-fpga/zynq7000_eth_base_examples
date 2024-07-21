@@ -17,7 +17,7 @@ platform = client.create_platform_component(name = config.platform_name,hw_desig
 # Add the bsp libs
 platform = client.get_component(config.platform_name)
 domain = platform.get_domain(config.domain_name)
-for lib_name, lib_path in config.bsp_libs.items():
+for lib_name in config.bsp_libs:
     status = domain.set_lib(lib_name=lib_name)
 # Build the platform
 status = platform.build()
