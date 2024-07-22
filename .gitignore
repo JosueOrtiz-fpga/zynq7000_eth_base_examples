@@ -1,0 +1,5 @@
+make/*
+!make/scripts/
+!make/Makefile
+top/*/sw/__pycache__
+vitis_journal.py
