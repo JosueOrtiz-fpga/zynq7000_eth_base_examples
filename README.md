@@ -19,7 +19,10 @@ make $(top_name).sw
 To program the board, open the Vitis project in Vitis, select the application component, and "Run" it.
 ## Table of Contents
 * [Z7 Echo Server](#z7_echo_server)  
-* [Emphasis](#emphasis)
-
+* [Z7 Packet Redirection](#z7_pkt_redirect)
+---
 ## Z7 Echo Server <a name="z7_echo_server"/>
+This example configures the Z7 FPGA as a ethernet server that echos the user keyboard input. [Digilent](https://digilent.com/reference/programmable-logic/guides/zynq-servers) provides a step-by-step guide for building and running the design.
+
+## Z7 Packet Redirection <a name="z7_pkt_redirect"/>
 This example configures the Z7 FPGA as a ethernet server that echos the user keyboard input. [Digilent](https://digilent.com/reference/programmable-logic/guides/zynq-servers) provides a step-by-step guide for building and running the design.
