@@ -25,4 +25,4 @@ To program the board, open the Vitis project in Vitis, select the application co
 This example configures the Z7 FPGA as a ethernet server that echos the user keyboard input. [Digilent](https://digilent.com/reference/programmable-logic/guides/zynq-servers) provides a step-by-step guide for building and running the design.
 
 ## Z7 Packet Redirection <a name="z7_pkt_redirect"/>
-This example configures the Z7 FPGA as a ethernet server that echos the user keyboard input. [Digilent](https://digilent.com/reference/programmable-logic/guides/zynq-servers) provides a step-by-step guide for building and running the design.
+This example configures the Z7 FPGA as a ethernet server that echos the user keyboard input. [Digilent](https://digilent.com/reference/programmable-logic/guides/zynq-servers) provides a step-by-step guide for running the design.

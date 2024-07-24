@@ -118,7 +118,7 @@
 #include "xemacps_example.h"
 #include "xil_exception.h"
 #include "xil_mmu.h"
-#include "xtime_l.h"
+#include "xiltimer.h"
 
 /*************************** Constant Definitions ***************************/
 
@@ -193,7 +193,7 @@ static XScuGic IntcInstance;
  */
 int EmacPsDmaIntrExample(XScuGic *IntcInstancePtr,
 			  XEmacPs *EmacPsInstancePtr,
-			  u16 EmacPsDeviceId, u16 EmacPsIntrId);
+			  u32 EmacPsDeviceId, u16 EmacPsIntrId);
 
 int EmacPsDmaSingleFrameIntrExample(XEmacPs * EmacPsInstancePtr);
 
@@ -279,7 +279,7 @@ int main(void)
 *****************************************************************************/
 int EmacPsDmaIntrExample(XScuGic * IntcInstancePtr,
 			  XEmacPs * EmacPsInstancePtr,
-			  u16 EmacPsDeviceId,
+			  u32 EmacPsDeviceId,
 			  u16 EmacPsIntrId)
 {
 	int Status;

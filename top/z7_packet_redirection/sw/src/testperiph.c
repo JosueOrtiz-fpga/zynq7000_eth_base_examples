@@ -38,14 +38,6 @@
 #include "xemacps_example.h"
 #include "emacps_header.h"
 
-
-
-
-
-
-
-
-
 int main() 
 {
 
@@ -64,7 +56,7 @@ int main()
       
       print("\r\n Running ScuGicSelfTestExample() for ps7_scugic_0...\r\n");
       
-      Status = ScuGicSelfTestExample(XPAR_PS7_SCUGIC_0_DEVICE_ID);
+      Status = ScuGicSelfTestExample(XPAR_SCUGIC_SINGLE_DEVICE_ID);
       
       if (Status == 0) {
          print("ScuGicSelfTestExample PASSED\r\n");
@@ -77,7 +69,7 @@ int main()
    {
        int Status;
 
-       Status = ScuGicInterruptSetup(&intc, XPAR_PS7_SCUGIC_0_DEVICE_ID);
+       Status = ScuGicInterruptSetup(&intc, XPAR_SCUGIC_SINGLE_DEVICE_ID);
        if (Status == 0) {
           print("ScuGic Interrupt Setup PASSED\r\n");
        } 
@@ -92,7 +84,7 @@ int main()
       print("\r\n Running PPU Test using ps7_ethernet_0...\r\n");
       
       Status = EmacPsDmaIntrExample(&intc, &ps7_ethernet_0, \
-                                 XPAR_PS7_ETHERNET_0_DEVICE_ID, \
+                                 XPAR_GEM0_BASEADDR, \
                                  XPAR_PS7_ETHERNET_0_INTR);
 	
       if (Status == 0) {

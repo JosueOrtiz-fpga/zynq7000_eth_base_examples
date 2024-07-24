@@ -50,7 +50,7 @@
 
 int EmacPsDmaIntrExample(XScuGic *IntcInstancePtr,
 			  XEmacPs *EmacPsInstancePtr,
-			  u16 EmacPsDeviceId, u16 EmacPsIntrId);
+			  u32 EmacPsDeviceId, u16 EmacPsIntrId);
 
 #endif
 
