@@ -48,8 +48,8 @@
 #include "xil_types.h"
 #include "xstatus.h"
 
-int ScuGicSelfTestExample(u16 DeviceId);
-int ScuGicInterruptSetup(XScuGic *IntcInstancePtr, u16 DeviceId);
+int ScuGicSelfTestExample(u32 DeviceId);
+int ScuGicInterruptSetup(XScuGic *IntcInstancePtr, u32 DeviceId);
 
 #endif
 

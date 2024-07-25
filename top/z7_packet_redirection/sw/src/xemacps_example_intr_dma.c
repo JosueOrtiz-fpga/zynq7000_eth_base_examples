@@ -1,3 +1,4 @@
+#include <xil_types.h>
 #define TESTAPP_GEN
 
 /*****************************************************************************
@@ -119,6 +120,8 @@
 #include "xil_exception.h"
 #include "xil_mmu.h"
 #include "xiltimer.h"
+#include "xil_io.h"
+#include "xil_printf.h"
 
 /*************************** Constant Definitions ***************************/
 
@@ -128,7 +131,8 @@
  * change all the needed parameters in one place.
  */
 #define EMACPS_DEVICE_ID	XPAR_XEMACPS_0_DEVICE_ID
-#define INTC_DEVICE_ID		XPAR_SCUGIC_SINGLE_DEVICE_ID
+// #define INTC_DEVICE_ID		XPAR_SCUGIC_SINGLE_DEVICE_ID
+#define INTC_BASE_ADDR XPAR_XSCUGIC_0_BASEADDR
 #define EMACPS_IRPT_INTR	XPS_GEM0_INT_ID
 
 #define RXBD_CNT       32	/* Number of RxBDs to use */
@@ -175,6 +179,7 @@ u32 ppu_frame_rxvd = 0;
 #define BUFFER_DESC_MEM 0x40000000
 #define PACKET_BUFFER_0 0x80000000
 #define PACKET_BUFFER_1	0x80001000
+
 /*
  * Counters to be incremented by callbacks
  */
@@ -211,6 +216,8 @@ static void EmacPsDisableIntrSystem(XScuGic * IntcInstancePtr,
 static void XEmacPsSendHandler(void *Callback);
 static void XEmacPsRecvHandler(void *Callback);
 static void XEmacPsErrorHandler(void *Callback, u8 direction, u32 word);
+
+static void ReadPlBuffer( UINTPTR StartAddr, UINTPTR EndAddr);
 
 /*
  * Utility routines
@@ -374,12 +381,16 @@ int EmacPsDmaIntrExample(XScuGic * IntcInstancePtr,
 		EmacPsUtilErrorTrap("Error assigning handlers");
 		return XST_FAILURE;
 	}
+    /*
+	 * Set the PL RX Buffers as cacheable memory for reading
+	 */
+    // Xil_SetTlbAttributes(PACKET_BUFFER_0, NORM_WB_CACHE);
 
 	/*
 	 * The BDs need to be allocated in uncached memory. Hence the 1 MB
 	 * address range that starts at address 0xFF00000 is made uncached.
 	 */
-	Xil_SetTlbAttributes(0x0FF00000, 0xc02);
+	Xil_SetTlbAttributes(RX_BD_LIST_START_ADDRESS, STRONG_ORDERED);
 	/*
 	 * Setup RxBD space.
 	 *
@@ -898,7 +909,7 @@ static int EmacPsSetupIntrSystem(XScuGic *IntcInstancePtr,
 	 * Initialize the interrupt controller driver so that it is ready to
 	 * use.
 	 */
-	GicConfig = XScuGic_LookupConfig(INTC_DEVICE_ID);
+	GicConfig = XScuGic_LookupConfig(INTC_BASE_ADDR);
 	if (NULL == GicConfig) {
 		return XST_FAILURE;
 	}
@@ -1131,6 +1142,12 @@ void ppu_test(XEmacPs *EmacPsInstancePtr)
 		TxBuffer[0][j] = j;
 	}
 
+    // TxBuffer after filling it
+    printf("\r\n----------------------------\r\n");
+	printf("\r\nTxBuffer after filling it\r\n");
+	printf    ("----------------------------\r\n");
+	PrintData(TxBuffer);
+
 	//flush tx buffer in cache to DDR
 	Xil_DCacheFlushRange((u32)(&TxBuffer[0][0]), 1018);
 
@@ -1185,23 +1202,48 @@ void ppu_test(XEmacPs *EmacPsInstancePtr)
 	}
 
 	//verifying the TX and RX Buffer
+    printf("\r\n-------------------------------------------------------\r\n");
+	printf("\r\nPrinting &TxBuffer[0] before comparing \r\n");
+	printf("\r\n-------------------------------------------------------\r\n");
+    PrintData(&TxBuffer[0]);
+    printf("\r\n-------------------------------------------------------\r\n");
+	printf("\r\nPrinting &TXBuffer[1] before comparing \r\n");
+	printf("\r\n-------------------------------------------------------\r\n");
+    PrintData(&TxBuffer[1]);
+    printf("\r\n-------------------------------------------------------\r\n");
+	printf("\r\n Printing RxBuffer in PL using new function \r\n");
+	printf("\r\n-------------------------------------------------------\r\n");
+    ReadPlBuffer(PACKET_BUFFER_0, PACKET_BUFFER_1);
 	printf("\r\n-------------------------------------------------------\r\n");
 	printf("\r\nComparing Transmit Packet with PL Buffer data \r\n");
 	printf("\r\n-------------------------------------------------------\r\n");
 
 	//compare Tx to Rx
 	DataError = ReceiveDataVerify(&TxBuffer[0], PACKET_BUFFER_0, 1018);
+
+    if (DataError != 0)
+	{
+		printf("PPU Test TxBuffer[0] : FAILED\r\n");
+		printf("Data mismatch\r\n");
+		printf("Error Count = %d", DataError);
+	}
+    else
+	{
+		printf("PPU Test TxBuffer[0]: PASSED\r\n");
+		printf("Data OK\r\n");
+	}
+    
 	DataError += ReceiveDataVerify(&TxBuffer[1], PACKET_BUFFER_1, 1018);
 
 	if (DataError != 0)
 	{
-		printf("PPU Test : FAILED\r\n");
+		printf("PPU Test TxBuffer[1] : FAILED\r\n");
 		printf("Data mismatch\r\n");
 		printf("Error Count = %d", DataError);
 	}
-	else
+    else
 	{
-		printf("PPU Test : PASSED\r\n");
+		printf("PPU Test TxBuffer[1]: PASSED\r\n");
 		printf("Data OK\r\n");
 	}
 
@@ -1242,16 +1284,34 @@ void PrintData(char *data_ptr)
 
 
 int ReceiveDataVerify(char* Tx, char* Rx, u32 count)
-{
+{   
 	int i;
 	int error = 0;
 
 	for(i=0;i<count;i++)
 	{
-		if( *Tx != *Rx)
+		if( *Tx++ != *Rx++)
 		{
 			error++;
 		}
 	}
 	return error;
+}
+
+static void ReadPlBuffer( UINTPTR StartAddr, UINTPTR EndAddr) {
+    unsigned int i;
+    int c;
+    // for (i=StartAddr; i<=EndAddr; i++) {
+    //     if((i-StartAddr) % 8 == 0) {
+    //         xil_printf("\n\r", c);
+    //     }
+    //     c=Xil_In32(i);
+    //     xil_printf("%c ", c);
+        
+    // }
+    for(i=0; i<64; i++) {
+    c=Xil_In32(StartAddr+4*i);
+    xil_printf("0x%x ", c);
+    }
+    
 }

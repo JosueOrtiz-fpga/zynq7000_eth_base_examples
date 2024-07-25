@@ -96,8 +96,8 @@
 
 /************************** Function Prototypes ******************************/
 
-int ScuGicSelfTestExample(u16 DeviceId);
-int ScuGicInterruptSetup(XScuGic *IntcInstancePtr, u16 DeviceId);
+int ScuGicSelfTestExample(u32 DeviceId);
+int ScuGicInterruptSetup(XScuGic *IntcInstancePtr, u32 DeviceId);
 
 /************************** Variable Definitions *****************************/
 
@@ -162,7 +162,7 @@ int main(void)
 * @note		None.
 *
 ******************************************************************************/
-int ScuGicSelfTestExample(u16 DeviceId)
+int ScuGicSelfTestExample(u32 DeviceId)
 {
 	int Status;
 	static XScuGic_Config *GicConfig;
@@ -207,7 +207,7 @@ int ScuGicSelfTestExample(u16 DeviceId)
 * @note		None.
 *
 ******************************************************************************/
-int ScuGicInterruptSetup(XScuGic *IntcInstancePtr, u16 DeviceId)
+int ScuGicInterruptSetup(XScuGic *IntcInstancePtr, u32 DeviceId)
 {
 
 	int Status;

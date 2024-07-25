@@ -56,7 +56,7 @@ int main()
       
       print("\r\n Running ScuGicSelfTestExample() for ps7_scugic_0...\r\n");
       
-      Status = ScuGicSelfTestExample(XPAR_SCUGIC_SINGLE_DEVICE_ID);
+      Status = ScuGicSelfTestExample(XPAR_XSCUGIC_0_BASEADDR);
       
       if (Status == 0) {
          print("ScuGicSelfTestExample PASSED\r\n");
@@ -69,7 +69,7 @@ int main()
    {
        int Status;
 
-       Status = ScuGicInterruptSetup(&intc, XPAR_SCUGIC_SINGLE_DEVICE_ID);
+       Status = ScuGicInterruptSetup(&intc, XPAR_XSCUGIC_0_BASEADDR);
        if (Status == 0) {
           print("ScuGic Interrupt Setup PASSED\r\n");
        } 
@@ -79,13 +79,13 @@ int main()
    }
    
    {
-      int Status;
+      int Status;   
 
       print("\r\n Running PPU Test using ps7_ethernet_0...\r\n");
       
       Status = EmacPsDmaIntrExample(&intc, &ps7_ethernet_0, \
                                  XPAR_GEM0_BASEADDR, \
-                                 XPAR_PS7_ETHERNET_0_INTR);
+                                 XPS_GEM0_INT_ID);
 	
       if (Status == 0) {
          print("EmacPsDmaIntrExample PASSED\r\n");
