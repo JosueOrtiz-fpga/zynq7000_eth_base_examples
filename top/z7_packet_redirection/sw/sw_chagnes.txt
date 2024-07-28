@@ -1,5 +1,0 @@
-ethernet redirection PS update:
-In testperiph.c:
-	- change xtime_l.h to xiltimer.h
-	- change XPAR_PS7_SCUGIC_0_DEVICE_ID to XPAR_SCUGIC_SINGLE_DEVICE_ID
-	- define  XPAR_PS7_ETHERNET_0_DEVICE_ID as 0 
