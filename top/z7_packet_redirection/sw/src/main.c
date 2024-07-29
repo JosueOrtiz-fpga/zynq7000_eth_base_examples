@@ -9,6 +9,12 @@
 #define ETH0_WAKE_INT_ID 55U
 static XScuGic IntcInstance; // Interrupt Controller Instance
 static XEmacPs EmacInstance; // Ethernet MAC Controller
+char EmacPsMAC[] = { 0x00, 0x0a, 0x35, 0x01, 0x02, 0x03 };
+u32 RxCounter, TxCounter;
+
+// functions from xemacps_example_intr_dma Xilinx example
+static void XEmacPsRxTxHandler(void *Callback);
+static void XEmacPsErrorHandler(void *Callback, u8 Direction, u32 ErrorWord);
 
 /************************************************************************
  * Initializes the GIC
@@ -23,12 +29,12 @@ static XEmacPs EmacInstance; // Ethernet MAC Controller
  *************************************************************************/
 
  static inline s32 init_gic(XScuGic* IntcInstance, XScuGic_Config* CfgPtr, u32 BaseAddr) {
-    u32 status;
+    u32 Status;
      // Initialize the GIC
     CfgPtr = XScuGic_LookupConfig(BaseAddr);
-    status =XScuGic_CfgInitialize(IntcInstance, CfgPtr, BaseAddr);
+    Status =XScuGic_CfgInitialize(IntcInstance, CfgPtr, BaseAddr);
 
-    if(status != XST_SUCCESS) {
+    if(Status != XST_SUCCESS) {
         xil_printf("Error in configuring/initializing the GIC\n\r");
         return XST_FAILURE;
     }
@@ -61,17 +67,38 @@ static XEmacPs EmacInstance; // Ethernet MAC Controller
  *************************************************************************/
 
  static inline s32 init_emac(XEmacPs* EmacInstance, XEmacPs_Config* CfgPtr, u32 BaseAddr) {
-    u32 status, GemVersion;
-     // Initialize the GIC
+    u32 Status, GemVersion;
+     // Initialize the EMAC
     CfgPtr = XEmacPs_LookupConfig(BaseAddr);
-    status =XEmacPs_CfgInitialize(EmacInstance, CfgPtr, CfgPtr->BaseAddress);
-    if(status != XST_SUCCESS) {
+    Status =XEmacPs_CfgInitialize(EmacInstance, CfgPtr, CfgPtr->BaseAddress);
+    if(Status != XST_SUCCESS) {
         xil_printf("Error in configuring/initializing the EMAC\n\r");
         return XST_FAILURE;
     }
     GemVersion = ((Xil_In32(CfgPtr->BaseAddress + 0xFC)) >> 16) & 0xFFF; // geting GEM version to see if we need additional clock setup
-    xil_printf("EMAC.name=%s \n\r Emac.BAddr=0x%x\n\r Emac.Intrid=0x%x\n\r Emac.PhyType=%s \n\r Emac.GemVersion=%0d",
-    CfgPtr->Name, CfgPtr->BaseAddress, CfgPtr->IntrId, CfgPtr->PhyType,GemVersion);
+    // Set the MAC Address
+    Status = XEmacPs_SetMacAddress(EmacInstance,EmacPsMAC,1);
+    if(Status != XST_SUCCESS) {
+        xil_printf("Error in setting the MAC Address\n\r");
+        return XST_FAILURE;
+    }
+    // Print the MAC PS Infor
+    xil_printf("EMAC.name=%s \n\r Emac.BAddr=0x%x\n\r Emac.PhyType=%s \n\r Emac.GemVersion=%0d\n\r Emac.MacAddr=%s",
+    CfgPtr->Name, CfgPtr->BaseAddress, CfgPtr->IntrId, CfgPtr->PhyType,GemVersion,EmacPsMAC);
+    // Setup the interrupt callbacks
+	Status = XEmacPs_SetHandler(EmacInstance,
+				    XEMACPS_HANDLER_DMASEND,
+				    (void *) XEmacPsRxTxHandler,
+				    EmacInstance);
+	Status |=
+		XEmacPs_SetHandler(EmacInstance,
+				   XEMACPS_HANDLER_DMARECV,
+				   (void *) XEmacPsRxTxHandler,
+				   EmacInstance);
+	// Status |=
+	// 	XEmacPs_SetHandler(EmacInstance, XEMACPS_HANDLER_ERROR,
+	// 			   (void *) XEmacPsErrorHandler,
+	// 			   EmacPsInstancePtr);
     return XST_SUCCESS;
 
  }
@@ -80,19 +107,19 @@ int main () {
     XScuGic_Config Gic_CfgPtr;
     XEmacPs_Config Emac_CfgPtr;
 
-    u32 status;
+    u32 Status;
 
     print("Hello World\n\r");
 
     print("Initializing GIC_0\n\r");
-    status = init_gic(&IntcInstance, &Gic_CfgPtr, XPAR_XSCUGIC_0_BASEADDR);
-    if(status != XST_SUCCESS) {
+    Status = init_gic(&IntcInstance, &Gic_CfgPtr, XPAR_XSCUGIC_0_BASEADDR);
+    if(Status != XST_SUCCESS) {
         print("Initialization of GIC failed\n\r");
     }
 
     print("Initializing the EMAC_0\n\r");
-    status = init_emac(&EmacInstance, &Emac_CfgPtr, XPAR_XEMACPS_0_BASEADDR);
-    if(status != XST_SUCCESS) {
+    Status = init_emac(&EmacInstance, &Emac_CfgPtr, XPAR_XEMACPS_0_BASEADDR);
+    if(Status != XST_SUCCESS) {
         print("Initialization of EMAC failed\n\r");
     }
 
@@ -104,3 +131,98 @@ int main () {
 
 return 0;
 }
+
+
+/****************************************************************************/
+/**
+*
+* This is the EMac PS Interrupt Handler for transmit and recieve
+*
+* @param	Callback is the pointer to the instance of the EmacPs device.
+*
+* @return	None.
+*
+* @note		None.
+*
+*****************************************************************************/
+static void XEmacPsRxTxHandler(void *Callback)
+{
+	XEmacPs *EmacPsInstancePtr = (XEmacPs *) Callback;
+    
+    // Read the gem.intr status register - determine read or write
+    // Read the gem.intr_mask for the current mask state of each interrupt
+    // Clear the respective bits in gem.intr_status
+    // CLear the respective bits in gem.tx_status / gem.rx_status
+    // Increment counters so main thread knows something happened:
+    // Can optionally just xil_printf something
+}
+
+/****************************************************************************/
+/**
+*
+* This is the Error handler callback function and this function increments
+* the error counter so that the main thread knows the number of errors.
+*
+* @param	Callback is the callback function for the driver. This
+*		parameter is not used in this example.
+* @param	Direction is passed in from the driver specifying which
+*		direction error has occurred.
+* @param	ErrorWord is the status register value passed in.
+*
+* @return	None.
+*
+* @note		None.
+*
+*****************************************************************************/
+// static void XEmacPsErrorHandler(void *Callback, u8 Direction, u32 ErrorWord)
+// {
+// 	XEmacPs *EmacPsInstancePtr = (XEmacPs *) Callback;
+
+// 	/*
+// 	 * Increment the counter so that main thread knows something
+// 	 * happened. Reset the device and reallocate resources ...
+// 	 */
+// 	DeviceErrors++;
+
+// 	switch (Direction) {
+// 		case XEMACPS_RECV:
+// 			if (ErrorWord & XEMACPS_RXSR_HRESPNOK_MASK) {
+// 				EmacPsUtilErrorTrap("Receive DMA error");
+// 			}
+// 			if (ErrorWord & XEMACPS_RXSR_RXOVR_MASK) {
+// 				EmacPsUtilErrorTrap("Receive over run");
+// 			}
+// 			if (ErrorWord & XEMACPS_RXSR_BUFFNA_MASK) {
+// 				EmacPsUtilErrorTrap("Receive buffer not available");
+// 			}
+// 			break;
+// 		case XEMACPS_SEND:
+// 			if (ErrorWord & XEMACPS_TXSR_HRESPNOK_MASK) {
+// 				EmacPsUtilErrorTrap("Transmit DMA error");
+// 			}
+// 			if (ErrorWord & XEMACPS_TXSR_URUN_MASK) {
+// 				EmacPsUtilErrorTrap("Transmit under run");
+// 			}
+// 			if (ErrorWord & XEMACPS_TXSR_BUFEXH_MASK) {
+// 				EmacPsUtilErrorTrap("Transmit buffer exhausted");
+// 			}
+// 			if (ErrorWord & XEMACPS_TXSR_RXOVR_MASK) {
+// 				EmacPsUtilErrorTrap("Transmit retry excessed limits");
+// 			}
+// 			if (ErrorWord & XEMACPS_TXSR_FRAMERX_MASK) {
+// 				EmacPsUtilErrorTrap("Transmit collision");
+// 			}
+// 			if (ErrorWord & XEMACPS_TXSR_USEDREAD_MASK) {
+// 				EmacPsUtilErrorTrap("Transmit buffer not available");
+// 			}
+// 			break;
+// 	}
+// 	/*
+// 	 * Bypassing the reset functionality as the default tx status for q0 is
+// 	 * USED BIT READ. so, the first interrupt will be tx used bit and it resets
+// 	 * the core always.
+// 	 */
+// 	if (GemVersion == 2) {
+// 		EmacPsResetDevice(EmacPsInstancePtr);
+// 	}
+// }
