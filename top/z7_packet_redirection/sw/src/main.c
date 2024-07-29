@@ -70,8 +70,8 @@ static XEmacPs EmacInstance; // Ethernet MAC Controller
         return XST_FAILURE;
     }
     GemVersion = ((Xil_In32(CfgPtr->BaseAddress + 0xFC)) >> 16) & 0xFFF; // geting GEM version to see if we need additional clock setup
-    xil_printf("EMAC.name=%s \n\r Emac.BAddr=0x%x\n\r Emac.Intrid=0x%x\n\r Emac.PhyType=%s \n\r",
-    CfgPtr->Name, CfgPtr->BaseAddress, CfgPtr->IntrId, CfgPtr->PhyType);
+    xil_printf("EMAC.name=%s \n\r Emac.BAddr=0x%x\n\r Emac.Intrid=0x%x\n\r Emac.PhyType=%s \n\r Emac.GemVersion=%0d",
+    CfgPtr->Name, CfgPtr->BaseAddress, CfgPtr->IntrId, CfgPtr->PhyType,GemVersion);
     return XST_SUCCESS;
 
  }
